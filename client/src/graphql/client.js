@@ -27,18 +27,18 @@ const wsLink = new WebSocketLink({
   }
 })
 
-const client = new ApolloClient({
-  cache: new InMemoryCache(),
-  link: split(isSubscription, wsLink, httpLink),
-  defaultOptions: {query: {fetchPolicy: 'no-cache'}}
-});
-
 const isSubscription = (operation) => {
   const definition = getMainDefinition(operation.query);
   return (
     definition.kind === 'OperationDefinition' &&
     definition.operation === 'subscription'
   );
-},
+}
+
+const client = new ApolloClient({
+  cache: new InMemoryCache(),
+  link: split(isSubscription, wsLink, httpLink),
+  defaultOptions: {query: {fetchPolicy: 'no-cache'}}
+});
 
 export default client;
