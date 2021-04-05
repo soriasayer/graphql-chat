@@ -1,34 +1,45 @@
-import React, { useEffect, useState } from 'react';
-import { addMessage, getMessages, onMessageAdded } from './graphql/queries';
+import React, { useEffect } from 'react';
+import { useQuery, useMutation, useSubscription } from '@apollo/react-hooks';
+import { addMessage, addMessageMutation, getMessages, messageAddedSubscription, messagesQuery, onMessageAdded } from './graphql/queries';
 import MessageInput from './MessageInput';
 import MessageList from './MessageList';
 
 const Chat = ({user}) => {
-  const [messages, setMessage] = useState([])
+  const {data} = useQuery(messagesQuery)
+  const messages = data ? data.messages : []
+  useSubscription(messageAddedSubscription, {
+    onSubscriptionData: ({client, subscriptionData}) => {
+      client.writeData({data: {
+        messages: messages.concat(subscriptionData.data.messageAdded)
+      }})
+    }
+  })
+  const [addMessage] = useMutation(addMessageMutation)
+ 
   
-  useEffect(() => {
-    let subscription = null
+  // useEffect(() => {
+  //   let subscription = null
     
-    async function fetchMessage() {
-      const msgs = await getMessages();
-      setMessage(msgs);
+  //   async function fetchMessage() {
+  //     const msgs = await getMessages();
+  //     setMessage(msgs);
       
-      subscription = await onMessageAdded(message => {
-        setMessage(m => [...m, message]);
-      })
+  //     subscription = await onMessageAdded(message => {
+  //       setMessage(m => [...m, message]);
+  //     })
       
-    }
-    fetchMessage()
+  //   }
+  //   fetchMessage()
 
-    return () => {
-      if(subscription) {
-        subscription.unsubscribe()
-      }
-    }
-  },[])
+  //   return () => {
+  //     if(subscription) {
+  //       subscription.unsubscribe()
+  //     }
+  //   }
+  // },[])
 
   const handleSend = async(text) => {
-    await addMessage(text);
+    await addMessage({variables: {input: {text}}})
   }
 
   return (
